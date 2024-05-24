@@ -7,14 +7,9 @@
 from building import *
 
 cwd     = GetCurrentDir()
-
-src = Split('''
-lib_pthread_wrapper.c
-''')
-
+src     = Glob('*.c')
 CPPPATH = [cwd]
 
-
-group = DefineGroup('iwasm_lib_pthread', src, depend = [''], CPPPATH = CPPPATH)
+group = DefineGroup('iwasm_lib_wasi_threads', src, depend = [''], CPPPATH = CPPPATH)
 
 Return('group')

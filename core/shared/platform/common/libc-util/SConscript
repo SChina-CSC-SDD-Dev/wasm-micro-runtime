@@ -5,16 +5,16 @@
 #
 
 from building import *
+import re
+
+Import('rtconfig')
 
 cwd     = GetCurrentDir()
-
-src = Split('''
-lib_pthread_wrapper.c
+src     = Split('''
+libc_errno.c
 ''')
-
 CPPPATH = [cwd]
 
-
-group = DefineGroup('iwasm_lib_pthread', src, depend = [''], CPPPATH = CPPPATH)
+group = DefineGroup('iwasm_libc_util', src, depend = [''], CPPPATH = CPPPATH)
 
 Return('group')

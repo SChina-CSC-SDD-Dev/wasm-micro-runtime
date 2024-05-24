@@ -7,6 +7,11 @@
 #ifndef RTTHREAD_PLATFORM_INTERNAL_H
 #define RTTHREAD_PLATFORM_INTERNAL_H
 
+#include <errno.h>
+#include <fcntl.h>
+#include <limits.h>
+#include <poll.h>
+#include <pthread.h>
 #include <rtthread.h>
 #include <stdbool.h>
 #include <string.h>
@@ -15,6 +20,7 @@
 #include <math.h>
 #include <stdint.h>
 #include <ctype.h>
+#include <sys/ioctl.h>
 
 #if defined(WASM_ENABLE_AOT)
 #if defined(RTT_WAMR_BUILD_TARGET_THUMB)
@@ -37,6 +43,11 @@ typedef struct rt_mutex korp_mutex;
 typedef struct rt_thread korp_cond;
 typedef struct rt_thread korp_thread;
 typedef unsigned int korp_sem;
+
+#if !defined(socklen_t) && !defined(SOCKLEN_T_DEFINED)
+typedef uint32_t socklen_t;
+//typedef	__uint32_t	__socklen_t;
+#endif
 
 /* korp_rwlock is used in platform_api_extension.h,
    we just define the type to make the compiler happy */

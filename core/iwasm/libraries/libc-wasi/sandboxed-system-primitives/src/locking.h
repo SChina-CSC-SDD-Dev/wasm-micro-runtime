@@ -14,6 +14,7 @@
 #ifndef LOCKING_H
 #define LOCKING_H
 
+#include <pthread.h>
 #include "ssp_config.h"
 
 #ifndef __has_extension
