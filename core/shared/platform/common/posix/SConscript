@@ -14,7 +14,6 @@ src     = Split('''
 posix_file.c
 posix_clock.c
 posix_thread.c
-posix_socket.c
 ''')
 CPPPATH = [cwd]
 

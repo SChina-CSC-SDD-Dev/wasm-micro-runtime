@@ -7,9 +7,13 @@
 #ifndef RTTHREAD_PLATFORM_INTERNAL_H
 #define RTTHREAD_PLATFORM_INTERNAL_H
 
-#include <errno.h>
+/*
+#include <pthread.h>
+*/
+#include <sys/ioctl.h>
 #include <fcntl.h>
 #include <limits.h>
+#include <errno.h>
 #include <poll.h>
 #include <pthread.h>
 #include <rtthread.h>
@@ -20,7 +24,7 @@
 #include <math.h>
 #include <stdint.h>
 #include <ctype.h>
-#include <sys/ioctl.h>
+#include <dirent.h>
 
 #if defined(WASM_ENABLE_AOT)
 #if defined(RTT_WAMR_BUILD_TARGET_THUMB)
@@ -48,6 +52,48 @@ typedef unsigned int korp_sem;
 typedef uint32_t socklen_t;
 //typedef	__uint32_t	__socklen_t;
 #endif
+
+#if !defined(SOL_SOCKET)
+#define SOL_SOCKET  1
+#endif
+
+#if !defined(SO_TYPE)
+#define SO_TYPE	    3
+#endif
+
+#if !defined(SOCK_DGRAM)
+#define SOCK_DGRAM  2
+#endif
+
+#if !defined(SOCK_STREAM)
+#define SOCK_STREAM  1
+#endif
+
+#if !defined(UTIME_NOW)
+#define UTIME_NOW	-2L
+#endif
+
+#if !defined(UTIME_OMIT)
+#define UTIME_OMIT	-1L
+#endif
+
+#if !defined(AT_SYMLINK_NOFOLLOW)
+#define AT_SYMLINK_NOFOLLOW 2
+#endif
+
+#if !defined(AT_SYMLINK_FOLLOW)
+#define AT_SYMLINK_FOLLOW   4
+#endif
+
+#if !defined(AT_REMOVEDIR)
+#define AT_REMOVEDIR        8
+#endif
+
+#define __RTT__
+
+#define DT_BLK     0x06
+#define DT_CHR     0x02
+#define DT_LNK     0x0A
 
 /* korp_rwlock is used in platform_api_extension.h,
    we just define the type to make the compiler happy */
