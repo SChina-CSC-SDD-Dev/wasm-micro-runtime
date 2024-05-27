@@ -95,6 +95,9 @@ typedef uint32_t socklen_t;
 #define DT_CHR     0x02
 #define DT_LNK     0x0A
 
+#define PTHREAD_STACK_MIN 1024
+#define BH_THREAD_DEFAULT_PRIORITY 30
+
 /* korp_rwlock is used in platform_api_extension.h,
    we just define the type to make the compiler happy */
 typedef struct {

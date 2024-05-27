@@ -4,7 +4,9 @@
  */
 
 #ifndef _GNU_SOURCE
+#if !defined(__RTTHREAD__)
 #define _GNU_SOURCE
+#endif
 #endif
 #include "platform_api_vmcore.h"
 #include "platform_api_extension.h"

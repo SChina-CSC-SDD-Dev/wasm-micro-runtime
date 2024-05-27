@@ -13,6 +13,12 @@ cwd     = GetCurrentDir()
 src = Split('''
 ''')
 
+def is_as_pthread(src):
+    filters = ["rtt_thread.c"]
+    for filter in filters:
+        if filter in src:
+            return False
+    return True
 
 def addSrcFiles(arr, path):
     for f in os.listdir(path):
@@ -24,9 +30,10 @@ def addSrcFiles(arr, path):
         elif os.path.isdir(fpath):
             addSrcFiles(arr, fpath)
 
-
-
 addSrcFiles(src, cwd);
+if GetDepend('RT_USING_PTHREADS'):
+    src = list(filter(is_as_pthread, src))
+
 CPPPATH = [cwd, cwd+'/../include']
 
 group = DefineGroup('iwasm_platform_core', src, depend = [''], CPPPATH = CPPPATH)
