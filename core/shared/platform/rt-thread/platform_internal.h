@@ -7,9 +7,6 @@
 #ifndef RTTHREAD_PLATFORM_INTERNAL_H
 #define RTTHREAD_PLATFORM_INTERNAL_H
 
-/*
-#include <pthread.h>
-*/
 #include <sys/ioctl.h>
 #include <fcntl.h>
 #include <limits.h>
@@ -50,7 +47,6 @@ typedef unsigned int korp_sem;
 
 #if !defined(socklen_t) && !defined(SOCKLEN_T_DEFINED)
 typedef uint32_t socklen_t;
-//typedef	__uint32_t	__socklen_t;
 #endif
 
 #if !defined(SOL_SOCKET)
@@ -89,11 +85,9 @@ typedef uint32_t socklen_t;
 #define AT_REMOVEDIR        8
 #endif
 
-#define __RTT__
-
-#define DT_BLK     0x06
-#define DT_CHR     0x02
-#define DT_LNK     0x0A
+#define DT_BLK            0x06
+#define DT_CHR            0x02
+#define DT_LNK            0x0A
 
 #define PTHREAD_STACK_MIN 1024
 #define BH_THREAD_DEFAULT_PRIORITY 30
