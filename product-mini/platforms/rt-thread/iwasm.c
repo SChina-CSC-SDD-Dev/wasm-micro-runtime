@@ -11,6 +11,10 @@
 #include <dfs_file.h>
 #include <dfs_fs.h>
 
+#if WASM_ENABLE_LIBC_WASI != 0
+#include "../common/libc_wasi.c"
+#endif
+
 #ifdef WAMR_ENABLE_RTT_EXPORT
 
 #ifdef WAMR_RTT_EXPORT_VPRINTF
@@ -160,6 +164,15 @@ static NativeSymbol native_export_symbols[] = {
 
 #endif /* WAMR_ENABLE_RTT_EXPORT */
 
+static void *
+app_instance_func(wasm_module_inst_t module_inst, const char *func_name,
+                  int app_argc, char **app_argv)
+{
+    wasm_application_execute_func(module_inst, func_name, app_argc - 1,
+                                  app_argv + 1);
+    return wasm_runtime_get_exception(module_inst);
+}
+
 /**
  * run WASM module instance.
  * @param module_inst instance of wasm module
@@ -170,12 +183,8 @@ static NativeSymbol native_export_symbols[] = {
 static void *
 app_instance_main(wasm_module_inst_t module_inst, int app_argc, char **app_argv)
 {
-    const char *exception;
-
     wasm_application_execute_main(module_inst, app_argc, app_argv);
-    if ((exception = wasm_runtime_get_exception(module_inst)))
-        rt_kprintf("%s\n", exception);
-    return NULL;
+    return wasm_runtime_get_exception(module_inst);
 }
 
 rt_uint8_t *
@@ -219,6 +228,10 @@ iwasm_help(void)
     rt_kputs("\t -h: show this tips.\n");
     rt_kputs("\t -t: show time taking to run this app.\n");
     rt_kputs("\t -m: show memory taking to run this app\n");
+    rt_kputs("\t -f|--function name: specify a function name of the module "
+            "to run rather\n" "than main\n");
+    rt_kputs("\t --max-threads=n: set maximum thread number per cluster, "
+             "default is 4\n");
     rt_kputs("\t wasm file name and exec params must behind of all vm-param\n");
 #else
     rt_kputs("wrong input: iwasm <*.wasm> <wasm_args ...>\n");
@@ -228,6 +241,8 @@ iwasm_help(void)
 int
 iwasm(int argc, char **argv)
 {
+    const char *exception = NULL;
+    const char *func_name = NULL;
     rt_uint8_t *wasm_file_buf = NULL;
     rt_uint32_t wasm_file_size;
     rt_uint32_t stack_size = 4 * 1024, heap_size = 4 * 1024;
@@ -259,6 +274,17 @@ iwasm(int argc, char **argv)
         else if (argv[i_arg_begin][1] == 'h') {
             iwasm_help();
             return 0;
+        }
+        else if (argv[i_arg_begin][1] == 'f') {
+            func_name = argv[++i_arg_begin];
+        }
+        else if (!strncmp(argv[i_arg_begin], "--max-threads=", 14)) {
+            if (argv[0][14] != '\0')
+                wasm_runtime_set_max_thread_num(atoi(argv[0] + 14));
+            else {
+                iwasm_help();
+                return 0;
+            }
         }
         else if (argv[i_arg_begin][1] == 0x00) {
             continue;
@@ -303,7 +329,7 @@ iwasm(int argc, char **argv)
     rt_thread_t tid;
     if (show_stack) {
         tid = rt_thread_self();
-        printf("thread stack addr: %p, size: %u, sp: %p\n", tid->stack_addr,
+        rt_kprintf("thread stack addr: %p, size: %u, sp: %p\n", tid->stack_addr,
                tid->stack_size, tid->sp);
     }
 #endif /* WAMR_ENABLE_PARAMS */
@@ -341,12 +367,22 @@ iwasm(int argc, char **argv)
     }
 #endif /* WAMR_ENABLE_PARAMS */
 
-    app_instance_main(wasm_module_inst, argc - i_arg_begin, &argv[i_arg_begin]);
+    if (func_name) {
+        exception = app_instance_func(wasm_module_inst, func_name,
+                                      argc - i_arg_begin, &argv[i_arg_begin]);
+    }
+    else {
+        exception = app_instance_main(wasm_module_inst, argc - i_arg_begin,
+                                      &argv[i_arg_begin]);
+    }
+
+    if (exception)
+        rt_kprintf("%s\n", exception);
 
 #ifdef WAMR_ENABLE_IWASM_PARAMS
     if (show_time_exec) {
         ticks_exec = rt_tick_get() - ticks_exec;
-        printf("[iwasm] execute ticks took: %u [ticks/s = %u]\n", ticks_exec,
+        rt_kprintf("[iwasm] execute ticks took: %u [ticks/s = %u]\n", ticks_exec,
                RT_TICK_PER_SECOND);
     }
 #if defined(RT_USING_HEAP) && defined(RT_USING_MEMHEAP_AS_HEAP)
@@ -361,7 +397,7 @@ iwasm(int argc, char **argv)
     }
 #endif
     if (show_stack) {
-        printf("[iwasm] thread stack addr: %p, size: %u, sp: %p\n",
+        rt_kprintf("[iwasm] thread stack addr: %p, size: %u, sp: %p\n",
                tid->stack_addr, tid->stack_size, tid->sp);
     }
 
