@@ -13,10 +13,10 @@ cwd     = GetCurrentDir()
 src = Split('''
 ''')
 
-def is_as_pthread(src):
-    filters = ["rtt_thread.c"]
-    for filter in filters:
-        if filter in src:
+def pthread_compatible(src):
+    not_compatibles = ["rtt_thread.c"]
+    for file in not_compatibles:
+        if file in src:
             return False
     return True
 
@@ -32,7 +32,7 @@ def addSrcFiles(arr, path):
 
 addSrcFiles(src, cwd);
 if GetDepend('RT_USING_PTHREADS'):
-    src = list(filter(is_as_pthread, src))
+    src = list(filter(pthread_compatible, src))
 
 CPPPATH = [cwd, cwd+'/../include']
 
