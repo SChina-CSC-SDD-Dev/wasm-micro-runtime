@@ -110,7 +110,8 @@ os_thread_create(korp_tid *tid, thread_start_routine_t start, void *arg,
 korp_tid
 os_self_thread()
 {
-    return (korp_tid)pthread_self();
+    //return (korp_tid)pthread_self();
+    return _pthread_data_get_pth(rt_thread_self()->pthread_data);
 }
 
 int
@@ -338,21 +339,12 @@ os_cond_broadcast(korp_cond *cond)
 int
 os_rwlock_init(korp_rwlock *lock)
 {
-    assert(lock);
-
-    if (pthread_rwlock_init(lock, NULL) != BHT_OK)
-        return BHT_ERROR;
-
     return BHT_OK;
 }
 
 int
 os_rwlock_rdlock(korp_rwlock *lock)
 {
-    assert(lock);
-
-    if (pthread_rwlock_rdlock(lock) != BHT_OK)
-        return BHT_ERROR;
 
     return BHT_OK;
 }
@@ -360,10 +352,6 @@ os_rwlock_rdlock(korp_rwlock *lock)
 int
 os_rwlock_wrlock(korp_rwlock *lock)
 {
-    assert(lock);
-
-    if (pthread_rwlock_wrlock(lock) != BHT_OK)
-        return BHT_ERROR;
 
     return BHT_OK;
 }
@@ -371,21 +359,12 @@ os_rwlock_wrlock(korp_rwlock *lock)
 int
 os_rwlock_unlock(korp_rwlock *lock)
 {
-    assert(lock);
-
-    if (pthread_rwlock_unlock(lock) != BHT_OK)
-        return BHT_ERROR;
-
     return BHT_OK;
 }
 
 int
 os_rwlock_destroy(korp_rwlock *lock)
 {
-    assert(lock);
-
-    if (pthread_rwlock_destroy(lock) != BHT_OK)
-        return BHT_ERROR;
 
     return BHT_OK;
 }
@@ -418,60 +397,8 @@ static os_thread_local_attribute uint8 *thread_stack_boundary = NULL;
 uint8 *
 os_thread_get_stack_boundary()
 {
-    pthread_t self;
-#ifdef __linux__
-    pthread_attr_t attr;
-    size_t guard_size;
-#endif
-    uint8 *addr = NULL;
-    size_t stack_size, max_stack_size;
-    int page_size;
-
-#if defined(os_thread_local_attribute)
-    if (thread_stack_boundary)
-        return thread_stack_boundary;
-#endif
-
-    page_size = getpagesize();
-    self = pthread_self();
-    max_stack_size =
-        (size_t)(APP_THREAD_STACK_SIZE_MAX + page_size - 1) & ~(page_size - 1);
-
-    if (max_stack_size < APP_THREAD_STACK_SIZE_DEFAULT)
-        max_stack_size = APP_THREAD_STACK_SIZE_DEFAULT;
-
-#ifdef __linux__
-    if (pthread_getattr_np(self, &attr) == 0) {
-        pthread_attr_getstack(&attr, (void **)&addr, &stack_size);
-        pthread_attr_getguardsize(&attr, &guard_size);
-        pthread_attr_destroy(&attr);
-        if (stack_size > max_stack_size)
-            addr = addr + stack_size - max_stack_size;
-        addr += guard_size;
-    }
-    (void)stack_size;
-#elif defined(__APPLE__) || defined(__NuttX__)
-    if ((addr = (uint8 *)pthread_get_stackaddr_np(self))) {
-        stack_size = pthread_get_stacksize_np(self);
-
-        /**
-         * Check whether stack_addr is the base or end of the stack,
-         * change it to the base if it is the end of stack.
-         */
-        if (addr <= (uint8 *)&stack_size)
-            addr = addr + stack_size;
-
-        if (stack_size > max_stack_size)
-            stack_size = max_stack_size;
-
-        addr -= stack_size;
-    }
-#endif
-
-#if defined(os_thread_local_attribute)
-    thread_stack_boundary = addr;
-#endif
-    return addr;
+    rt_thread_t tid = rt_thread_self();
+    return tid->stack_addr;
 }
 
 void

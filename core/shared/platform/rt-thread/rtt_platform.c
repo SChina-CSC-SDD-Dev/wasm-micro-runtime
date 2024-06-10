@@ -6,7 +6,7 @@
 
 #include <platform_api_vmcore.h>
 #include <platform_api_extension.h>
-
+#include "heap_wrapper.h"
 typedef struct os_malloc_list {
     void *real;
     void *used;
@@ -30,7 +30,8 @@ os_malloc(unsigned size)
     void *buf_fixed;
     rt_ubase_t *addr_field;
 
-    buf_origin = rt_malloc(size + 8 + sizeof(rt_ubase_t));
+    //buf_origin = rt_malloc(size + 8 + sizeof(rt_ubase_t));
+    buf_origin = heap_alloc(DDR_HEAP, size + 8 + sizeof(rt_ubase_t));
     buf_fixed = buf_origin + sizeof(void *);
     if ((rt_ubase_t)buf_fixed & 0x7) {
         buf_fixed = (void *)((rt_ubase_t)(buf_fixed + 8) & (~7));
@@ -57,7 +58,8 @@ os_realloc(void *ptr, unsigned size)
 
     addr_field = ptr - sizeof(rt_ubase_t);
     mem_origin = (void *)(*addr_field);
-    mem_new = rt_realloc(mem_origin, size + 8 + sizeof(rt_ubase_t));
+    //mem_new = rt_realloc(mem_origin, size + 8 + sizeof(rt_ubase_t));
+    mem_new = heap_alloc(DDR_HEAP, size + 8 + sizeof(rt_ubase_t));
 
     if (mem_origin != mem_new) {
         mem_new_fixed = mem_new + sizeof(rt_ubase_t);
@@ -68,6 +70,7 @@ os_realloc(void *ptr, unsigned size)
         addr_field = mem_new_fixed - sizeof(rt_ubase_t);
         *addr_field = (rt_ubase_t)mem_new;
 
+        memcpy(mem_new_fixed, ptr, size);/* zdk TODO TEST */
         return mem_new_fixed;
     }
 
@@ -84,7 +87,8 @@ os_free(void *ptr)
         addr_field = ptr - sizeof(rt_ubase_t);
         mem_origin = (void *)(*addr_field);
 
-        rt_free(mem_origin);
+        //rt_free(mem_origin);
+        heap_free(mem_origin);
     }
 }
 
@@ -136,18 +140,15 @@ os_time_thread_cputime_us(void)
 void *
 os_mmap(void *hint, size_t size, int prot, int flags, os_file_handle file)
 {
-    void *addr;
-
-    if ((addr = rt_malloc(size)))
-        memset(addr, 0, size);
-
-    return addr;
+    //return rt_malloc(size);
+    return heap_alloc(DDR_HEAP, size);
 }
 
 void
 os_munmap(void *addr, size_t size)
 {
-    rt_free(addr);
+    //rt_free(addr);
+    heap_free(addr);
 }
 
 int
@@ -163,3 +164,8 @@ os_dcache_flush(void)
 void
 os_icache_flush(void *start, size_t len)
 {}
+
+int	getpagesize (void)
+{
+    return 65536;
+}

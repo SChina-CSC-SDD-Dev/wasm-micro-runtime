@@ -685,9 +685,7 @@ execute_func(WASMModuleInstanceCommon *module_inst, const char *name,
         goto fail;
     }
 
-#if WASM_ENABLE_GC != 0
-    ref_type_map = type->result_ref_type_maps;
-#endif
+    memset(argv[0], 0, strlen(argv[0]));
     /* print return value */
     for (j = 0; j < type->result_count; j++) {
         switch (type->types[type->param_count + j]) {

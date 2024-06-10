@@ -187,12 +187,23 @@ app_instance_main(wasm_module_inst_t module_inst, int app_argc, char **app_argv)
     return wasm_runtime_get_exception(module_inst);
 }
 
+#include "../../../../../../application/system/include/file_manager.h"
 rt_uint8_t *
 my_read_file_to_buffer(char *filename, rt_uint32_t *size)
 {
     struct stat f_stat;
+    model_desc_t *desc;
 
+    desc = get_model_by_name(filename);
+    f_stat.st_size = desc->size;
+#ifdef MALLOC_USE_DDR_TEST
+    rt_uint8_t *buff = heap_alloc(DDR_HEAP, f_stat.st_size);
+#else
     rt_uint8_t *buff = rt_malloc(f_stat.st_size);
+#endif
+    memcpy(buff, desc->addr, f_stat.st_size);
+    *size = desc->size;
+#if 0
     *size = 0;
     if (!buff) {
         rt_set_errno(-ENOMEM);
@@ -215,7 +226,7 @@ my_read_file_to_buffer(char *filename, rt_uint32_t *size)
         rt_set_errno(-EBADF);
         return RT_NULL;
     }
-
+#endif
     return buff;
 }
 
@@ -245,12 +256,16 @@ iwasm(int argc, char **argv)
     const char *func_name = NULL;
     rt_uint8_t *wasm_file_buf = NULL;
     rt_uint32_t wasm_file_size;
-    rt_uint32_t stack_size = 4 * 1024, heap_size = 4 * 1024;
+    rt_uint32_t stack_size = 64 * 1024, heap_size = 256 * 1024;
     wasm_module_t wasm_module = NULL;
     wasm_module_inst_t wasm_module_inst = NULL;
     RuntimeInitArgs init_args;
     static char error_buf[128] = { 0 };
     /* avoid stack overflow */
+#if WASM_ENABLE_LIBC_WASI != 0
+    libc_wasi_parse_context_t wasi_parse_ctx;
+    memset(&wasi_parse_ctx, 0, sizeof(wasi_parse_ctx));
+#endif
 
 #ifdef WAMR_ENABLE_IWASM_PARAMS
     int i_arg_begin;
@@ -352,6 +367,10 @@ iwasm(int argc, char **argv)
         rt_kprintf("%s\n", error_buf);
         goto fail2;
     }
+#if WASM_ENABLE_LIBC_WASI != 0
+    libc_wasi_init(wasm_module, argc, argv, &wasi_parse_ctx);
+#endif
+
     rt_memset(error_buf, 0x00, sizeof(error_buf));
     wasm_module_inst = wasm_runtime_instantiate(
         wasm_module, stack_size, heap_size, error_buf, sizeof(error_buf));
@@ -374,10 +393,18 @@ iwasm(int argc, char **argv)
     else {
         exception = app_instance_main(wasm_module_inst, argc - i_arg_begin,
                                       &argv[i_arg_begin]);
+        printf("finshed run app_instance_main\n");
     }
 
     if (exception)
         rt_kprintf("%s\n", exception);
+
+#if WASM_ENABLE_LIBC_WASI != 0
+    if (!exception) {
+        /* propagate wasi exit code. */
+        wasm_runtime_get_wasi_exit_code(wasm_module_inst);
+    }
+#endif
 
 #ifdef WAMR_ENABLE_IWASM_PARAMS
     if (show_time_exec) {
