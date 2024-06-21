@@ -167,5 +167,5 @@ os_icache_flush(void *start, size_t len)
 
 int	getpagesize (void)
 {
-    return 65536;
+    return 1024;
 }

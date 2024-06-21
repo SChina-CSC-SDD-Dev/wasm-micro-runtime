@@ -250,7 +250,7 @@ iwasm_help(void)
 }
 
 int
-iwasm(int argc, char **argv)
+_iwasm(int argc, char **argv)
 {
     const char *exception = NULL;
     const char *func_name = NULL;
@@ -445,5 +445,29 @@ fail1:
     /* destroy runtime environment */
     wasm_runtime_destroy();
     return 0;
+}
+
+static void* thread_entry(void* parameter)
+{
+    int argc = 2;
+    char *argv[] = {"iwasm", "coremark.aot.tlf"};
+    _iwasm(argc, argv);
+}
+
+int
+iwasm(int argc, char **argv)
+{
+    pthread_t tid;
+    pthread_attr_t attr;      /* Thread attribute */
+    struct sched_param prio;  /* Thread priority */
+
+    prio.sched_priority = 8;  /* Priority is set to 8 */
+    pthread_attr_init(&attr);  /* Initialize the property with default values first */
+    pthread_attr_setschedparam(&attr,&prio);  /* Modify the priority corresponding to the attribute */
+    pthread_attr_setstacksize(&attr, 8192);
+
+    int result = pthread_create(&tid,&attr,thread_entry,(void*)1);
+    pthread_join(tid, NULL);
+    return 1;
 }
 MSH_CMD_EXPORT(iwasm, Embeded VM of WebAssembly);
