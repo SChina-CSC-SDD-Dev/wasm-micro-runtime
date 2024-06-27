@@ -43,7 +43,7 @@
 #endif
 #endif /* WASM_ENABLE_AOT */
 
-#if defined(RT_USING_PTHREADS)
+#if 0//defined(RT_USING_PTHREADS)
 typedef pthread_t korp_tid;
 typedef pthread_mutex_t korp_mutex;
 typedef pthread_cond_t korp_cond;

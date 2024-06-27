@@ -13,7 +13,6 @@ cwd     = GetCurrentDir()
 src     = Split('''
 posix_file.c
 posix_clock.c
-posix_thread.c
 ''')
 CPPPATH = [cwd]
 

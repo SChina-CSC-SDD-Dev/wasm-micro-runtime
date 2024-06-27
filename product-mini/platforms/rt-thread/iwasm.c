@@ -447,27 +447,51 @@ fail1:
     return 0;
 }
 
+#if defined(RT_USING_PTHREADS)
+static int _argc= 0;
+static char **_argv = NULL;
+
 static void* thread_entry(void* parameter)
 {
-    int argc = 2;
-    char *argv[] = {"iwasm", "coremark.aot.tlf"};
-    _iwasm(argc, argv);
+    rt_kprintf("thread_entry enter\n");
+    _iwasm(_argc, _argv);
 }
+#endif
 
 int
 iwasm(int argc, char **argv)
 {
+//#if defined(RT_USING_PTHREADS)
+#if 1
+/*
     pthread_t tid;
-    pthread_attr_t attr;      /* Thread attribute */
-    struct sched_param prio;  /* Thread priority */
+    pthread_attr_t attr;
+    //struct sched_param prio;
+    //prio.sched_priority = 8;
+    pthread_attr_init(&attr);
+    //pthread_attr_setschedparam(&attr,&prio);
+    pthread_attr_setstacksize(&attr, 16384);
 
-    prio.sched_priority = 8;  /* Priority is set to 8 */
-    pthread_attr_init(&attr);  /* Initialize the property with default values first */
-    pthread_attr_setschedparam(&attr,&prio);  /* Modify the priority corresponding to the attribute */
-    pthread_attr_setstacksize(&attr, 8192);
 
     int result = pthread_create(&tid,&attr,thread_entry,(void*)1);
     pthread_join(tid, NULL);
+*/
+    _argc = argc;
+    _argv = argv;
+    os_thread_sys_init();
+    korp_tid tid;
+    int ret = os_thread_create(&tid, thread_entry, NULL,
+                               /*APP_THREAD_STACK_SIZE_DEFAULT*/ 16384);
+    if (ret != 0) {
+        rt_kprintf("Failed to start thread_entry\n");
+    }
+
+    rt_kprintf("os_thread_create, tid=%p\n",tid);
+    os_thread_join(tid, NULL);
+
+#else
+   _iwasm(argc, argv);
+#endif
     return 1;
 }
 MSH_CMD_EXPORT(iwasm, Embeded VM of WebAssembly);
