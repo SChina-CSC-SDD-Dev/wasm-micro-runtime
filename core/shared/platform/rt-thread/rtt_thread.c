@@ -79,6 +79,7 @@ os_thread_wrapper(void *arg)
     thread_data_list_add(thread_data);
 
     thread_data->start_routine(thread_data->arg);
+    rt_kprintf("start_routine quit\n");
     os_thread_exit(NULL);
 }
 
@@ -133,13 +134,13 @@ os_thread_sys_init()
     if (is_thread_sys_inited)
         return BHT_OK;
 
-    if (!(thread_data_lock = rt_mutex_create("data_lock", RT_IPC_FLAG_PRIO)))
+    if (!(thread_data_lock = rt_mutex_create("thread_data_lock_mutex", RT_IPC_FLAG_FIFO)))
         return BHT_ERROR;
 
     /* Initialize supervisor thread data */
     memset(&supervisor_thread_data, 0, sizeof(supervisor_thread_data));
 
-    if (!(supervisor_thread_data.wait_node.sem = rt_sem_create("spvr", 1, RT_IPC_FLAG_PRIO))) {
+    if (!(supervisor_thread_data.wait_node.sem = rt_sem_create("spvr", 0, RT_IPC_FLAG_PRIO))) {
         rt_mutex_delete(thread_data_lock);
         return BHT_ERROR;
     }
@@ -289,18 +290,14 @@ os_thread_create_with_prio(korp_tid *p_tid, thread_start_routine_t start,
     thread_data->start_routine = start;
     thread_data->arg = arg;
 
-    rt_kprintf("os_thread_create_with_prio 1\n");
-    if (!(thread_data->wait_node.sem = rt_sem_create("sem", 1, RT_IPC_FLAG_PRIO)))
+    if (!(thread_data->wait_node.sem = rt_sem_create("sem", 0, RT_IPC_FLAG_PRIO)))
         goto fail1;
 
-    rt_kprintf("os_thread_create_with_prio 2\n");
-    if (!(thread_data->wait_list_lock = rt_mutex_create("data_lock", RT_IPC_FLAG_PRIO)))
+    if (!(thread_data->wait_list_lock = rt_mutex_create("wait_list_lock_mutex", RT_IPC_FLAG_FIFO)))
         goto fail2;
 
     snprintf(thread_name, sizeof(thread_name), "%s%d", "wasm-thread-",
              ++thread_name_index);
-
-    rt_kprintf("os_thread_create_with_prio 3, thread_name=%s\n", thread_name);
 
     thread_data->handle = rt_thread_create(thread_name, os_thread_wrapper, thread_data, stack_size, 15, 5);
     if(thread_data->handle == RT_NULL) {
@@ -353,6 +350,7 @@ os_thread_join(korp_tid thread, void **value_ptr)
     /* Get thread data */
     thread_data = thread_data_list_lookup(handle);
 
+    rt_kprintf("os_thread_join 1\n");
     rt_mutex_take(thread_data->wait_list_lock, RT_WAITING_FOREVER);
     if (!thread_data->thread_wait_list)
         thread_data->thread_wait_list = &curr_thread_data->wait_node;
@@ -363,10 +361,13 @@ os_thread_join(korp_tid thread, void **value_ptr)
             p = p->next;
         p->next = &curr_thread_data->wait_node;
     }
+    rt_kprintf("os_thread_join 2\n");
     rt_mutex_release(thread_data->wait_list_lock);
 
+    rt_kprintf("rt_sem_take wait_node.sem\n");
     /* Wait the sem */
     rt_sem_take(curr_thread_data->wait_node.sem, RT_WAITING_FOREVER);
+    rt_kprintf("rt_sem_take wait_node.sem released\n");
     return BHT_OK;
 }
 
@@ -393,14 +394,16 @@ os_thread_cleanup(void)
             head = next;
         }
     }
-    rt_sem_release(rt_mutex_take);
+    rt_mutex_release(wait_list_lock);
 
     /* Free sem and lock */
     rt_sem_delete(wait_node_sem);
     rt_mutex_delete(wait_list_lock);
 
     thread_data_list_remove(thread_data);
-    BH_FREE(thread_data);
+    rt_free(thread_data);
+
+    rt_kprintf("os_thread_cleanup is done\n");
 }
 
 void

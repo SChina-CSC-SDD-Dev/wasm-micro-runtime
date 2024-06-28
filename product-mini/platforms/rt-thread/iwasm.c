@@ -451,10 +451,11 @@ fail1:
 static int _argc= 0;
 static char **_argv = NULL;
 
-static void* thread_entry(void* parameter)
+static void thread_entry(void* parameter)
 {
     rt_kprintf("thread_entry enter\n");
-    _iwasm(_argc, _argv);
+    //_iwasm(_argc, _argv);
+    usleep(10000);
 }
 #endif
 
@@ -463,19 +464,6 @@ iwasm(int argc, char **argv)
 {
 //#if defined(RT_USING_PTHREADS)
 #if 1
-/*
-    pthread_t tid;
-    pthread_attr_t attr;
-    //struct sched_param prio;
-    //prio.sched_priority = 8;
-    pthread_attr_init(&attr);
-    //pthread_attr_setschedparam(&attr,&prio);
-    pthread_attr_setstacksize(&attr, 16384);
-
-
-    int result = pthread_create(&tid,&attr,thread_entry,(void*)1);
-    pthread_join(tid, NULL);
-*/
     _argc = argc;
     _argv = argv;
     os_thread_sys_init();
