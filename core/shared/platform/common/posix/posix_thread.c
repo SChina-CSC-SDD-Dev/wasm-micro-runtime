@@ -338,12 +338,21 @@ os_cond_broadcast(korp_cond *cond)
 int
 os_rwlock_init(korp_rwlock *lock)
 {
+    assert(lock);
+
+    if (pthread_rwlock_init(lock, NULL) != BHT_OK)
+        return BHT_ERROR;
+
     return BHT_OK;
 }
 
 int
 os_rwlock_rdlock(korp_rwlock *lock)
 {
+    assert(lock);
+
+    if (pthread_rwlock_rdlock(lock) != BHT_OK)
+        return BHT_ERROR;
 
     return BHT_OK;
 }
@@ -351,6 +360,10 @@ os_rwlock_rdlock(korp_rwlock *lock)
 int
 os_rwlock_wrlock(korp_rwlock *lock)
 {
+    assert(lock);
+
+    if (pthread_rwlock_wrlock(lock) != BHT_OK)
+        return BHT_ERROR;
 
     return BHT_OK;
 }
@@ -358,12 +371,21 @@ os_rwlock_wrlock(korp_rwlock *lock)
 int
 os_rwlock_unlock(korp_rwlock *lock)
 {
+    assert(lock);
+
+    if (pthread_rwlock_unlock(lock) != BHT_OK)
+        return BHT_ERROR;
+
     return BHT_OK;
 }
 
 int
 os_rwlock_destroy(korp_rwlock *lock)
 {
+    assert(lock);
+
+    if (pthread_rwlock_destroy(lock) != BHT_OK)
+        return BHT_ERROR;
 
     return BHT_OK;
 }
@@ -397,7 +419,10 @@ uint8 *
 os_thread_get_stack_boundary()
 {
     pthread_t self;
-
+#ifdef __linux__
+    pthread_attr_t attr;
+    size_t guard_size;
+#endif
     uint8 *addr = NULL;
     size_t stack_size, max_stack_size;
     int page_size;
@@ -443,7 +468,6 @@ os_thread_get_stack_boundary()
             stack_size = max_stack_size;
 
         addr -= stack_size;
-
         /* Reserved 1 guard page at least for safety */
         addr += page_size;
     }

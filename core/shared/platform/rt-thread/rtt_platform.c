@@ -6,7 +6,7 @@
 
 #include <platform_api_vmcore.h>
 #include <platform_api_extension.h>
-#include "heap_wrapper.h"
+
 typedef struct os_malloc_list {
     void *real;
     void *used;
