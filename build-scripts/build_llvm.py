@@ -265,7 +265,7 @@ def main():
         "xtensa": {
             "repo": "https://github.com/espressif/llvm-project.git",
             "repo_ssh": "git@github.com:espressif/llvm-project.git",
-            "branch": "xtensa_release_17.0.1",
+            "branch": "xtensa_release_15.x",
         },
         "default": {
             "repo": "https://github.com/llvm/llvm-project.git",
