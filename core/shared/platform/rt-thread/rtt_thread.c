@@ -413,3 +413,8 @@ os_thread_exit(void *retval)
     os_thread_cleanup();
     //vTaskDelete(NULL);
 }
+
+int os_thread_kill(korp_tid tid, int sig)
+{
+    return rt_thread_kill(tid, sig);
+}

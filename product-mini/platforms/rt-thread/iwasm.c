@@ -454,8 +454,8 @@ static char **_argv = NULL;
 static void thread_entry(void* parameter)
 {
     rt_kprintf("thread_entry enter\n");
-    //_iwasm(_argc, _argv);
-    usleep(10000);
+    _iwasm(_argc, _argv);
+    //usleep(10000);
 }
 #endif
 
@@ -475,7 +475,8 @@ iwasm(int argc, char **argv)
     }
 
     rt_kprintf("os_thread_create, tid=%p\n",tid);
-    os_thread_join(tid, NULL);
+    if (os_thread_kill(tid, 0) != 0)
+        os_thread_join(tid, NULL);
 
 #else
    _iwasm(argc, argv);
