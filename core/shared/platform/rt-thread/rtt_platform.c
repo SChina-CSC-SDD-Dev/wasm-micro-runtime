@@ -39,6 +39,7 @@ os_malloc(unsigned size)
     addr_field = buf_fixed - sizeof(rt_ubase_t);
     *addr_field = (rt_ubase_t)buf_origin;
 
+    printf("os_malloc: (uintptr_t)%p & 0x7 == 0 : [%s]\n", buf_fixed, (((uintptr_t)buf_fixed & 0x7) == 0)?"TRUE":"FALSE");
     return buf_fixed;
 }
 
@@ -136,7 +137,13 @@ os_time_thread_cputime_us(void)
 void *
 os_mmap(void *hint, size_t size, int prot, int flags, os_file_handle file)
 {
-    return rt_malloc(size);
+    void *buf = rt_malloc(size);
+    /*if ((rt_ubase_t)buf & 0x7) {
+        buf = (void *)((rt_ubase_t)(buf + 8) & (~7));
+    }*/
+    
+    printf("os_mmap: buf=[%p]\n", buf);
+    return buf;
 }
 
 void
@@ -159,7 +166,11 @@ void
 os_icache_flush(void *start, size_t len)
 {}
 
-int	getpagesize (void)
+int os_getpagesize (void)
 {
     return 1024;
 }
+
+void *
+os_mremap(void *in, size_t old_size, size_t new_size)
+{}
