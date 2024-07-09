@@ -39,7 +39,6 @@ os_malloc(unsigned size)
     addr_field = buf_fixed - sizeof(rt_ubase_t);
     *addr_field = (rt_ubase_t)buf_origin;
 
-    printf("os_malloc: (uintptr_t)%p & 0x7 == 0 : [%s]\n", buf_fixed, (((uintptr_t)buf_fixed & 0x7) == 0)?"TRUE":"FALSE");
     return buf_fixed;
 }
 
@@ -137,19 +136,24 @@ os_time_thread_cputime_us(void)
 void *
 os_mmap(void *hint, size_t size, int prot, int flags, os_file_handle file)
 {
-    void *buf = rt_malloc(size);
-    /*if ((rt_ubase_t)buf & 0x7) {
-        buf = (void *)((rt_ubase_t)(buf + 8) & (~7));
-    }*/
+    void *ptr = rt_malloc(size+7+2);
+    void *align, *ptr1;
+
+    ptr1 = ptr+2;
+    align = (void*)((uint32)(ptr1+7)&(~7L));
+    *(uint16*)(align-2) = align - ptr;
     
-    printf("os_mmap: buf=[%p]\n", buf);
-    return buf;
+    printf("%s: alignment: %p -> %p(%u)\n", __FUNCTION__, ptr, align, *(uint16*)(align-2));
+    return align;
 }
 
 void
 os_munmap(void *addr, size_t size)
 {
-    rt_free(addr);
+    uint16 align_offset = *(uint16*)(addr-2);
+
+    printf("%s: free %p-> %p(%u)\n", __FUNCTION__, addr, addr-align_offset, align_offset);
+    rt_free(addr-align_offset);
 }
 
 int
@@ -166,11 +170,13 @@ void
 os_icache_flush(void *start, size_t len)
 {}
 
-int os_getpagesize (void)
+int os_getpagesize(void)
 {
     return 1024;
 }
 
 void *
 os_mremap(void *in, size_t old_size, size_t new_size)
-{}
+{
+    return os_realloc(in, new_size);
+}
