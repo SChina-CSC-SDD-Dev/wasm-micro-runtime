@@ -139,6 +139,9 @@ os_mmap(void *hint, size_t size, int prot, int flags, os_file_handle file)
     void *ptr = rt_malloc(size+7+2);
     void *align, *ptr1;
 
+
+    memset(ptr, 0, size+7+2);
+
     ptr1 = ptr+2;
     align = (void*)((uint32)(ptr1+7)&(~7L));
     *(uint16*)(align-2) = align - ptr;
