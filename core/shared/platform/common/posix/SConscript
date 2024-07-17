@@ -12,7 +12,6 @@ Import('rtconfig')
 cwd     = GetCurrentDir()
 src     = Split('''
 posix_file.c
-posix_clock.c
 ''')
 CPPPATH = [cwd]
 

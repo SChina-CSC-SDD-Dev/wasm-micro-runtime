@@ -183,3 +183,19 @@ os_mremap(void *in, size_t old_size, size_t new_size)
 {
     return os_realloc(in, new_size);
 }
+
+
+__wasi_errno_t
+os_clock_time_get(__wasi_clockid_t clock_id, __wasi_timestamp_t precision,
+                  __wasi_timestamp_t *time)
+{
+    *time = rt_tick_get() * 1000ll * 1000ll;
+    return 0;
+}
+
+__wasi_errno_t
+os_clock_res_get(__wasi_clockid_t clock_id, __wasi_timestamp_t *resolution)
+{
+    return 0;
+}
+
