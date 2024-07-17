@@ -133,30 +133,39 @@ os_time_thread_cputime_us(void)
     /* FIXME if u know the right api */
     return os_time_get_boot_us();
 }
+
 void *
 os_mmap(void *hint, size_t size, int prot, int flags, os_file_handle file)
 {
-    void *ptr = rt_malloc(size+7+2);
-    void *align, *ptr1;
+    void *buf_origin;
+    void *buf_fixed;
+    rt_ubase_t *addr_field;
 
+    buf_origin = rt_malloc(size + 8 + sizeof(rt_ubase_t));
+    buf_fixed = buf_origin + sizeof(void *);
+    if ((rt_ubase_t)buf_fixed & 0x7) {
+        buf_fixed = (void *)((rt_ubase_t)(buf_fixed + 8) & (~7));
+    }
 
-    memset(ptr, 0, size+7+2);
-
-    ptr1 = ptr+2;
-    align = (void*)((uint32)(ptr1+7)&(~7L));
-    *(uint16*)(align-2) = align - ptr;
+    addr_field = buf_fixed - sizeof(rt_ubase_t);
+    *addr_field = (rt_ubase_t)buf_origin;
     
-    printf("%s: alignment: %p -> %p(%u)\n", __FUNCTION__, ptr, align, *(uint16*)(align-2));
-    return align;
+    memset(buf_origin, 0, size + 8 + sizeof(rt_ubase_t));
+    return buf_fixed;
 }
 
 void
 os_munmap(void *addr, size_t size)
 {
-    uint16 align_offset = *(uint16*)(addr-2);
+    void *mem_origin;
+    rt_ubase_t *addr_field;
 
-    printf("%s: free %p-> %p(%u)\n", __FUNCTION__, addr, addr-align_offset, align_offset);
-    rt_free(addr-align_offset);
+    if (addr) {
+        addr_field = addr - sizeof(rt_ubase_t);
+        mem_origin = (void *)(*addr_field);
+
+        rt_free(mem_origin);
+    }
 }
 
 int

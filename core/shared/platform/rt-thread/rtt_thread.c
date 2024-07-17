@@ -350,7 +350,6 @@ os_thread_join(korp_tid thread, void **value_ptr)
     /* Get thread data */
     thread_data = thread_data_list_lookup(handle);
 
-    rt_kprintf("os_thread_join 1\n");
     rt_mutex_take(thread_data->wait_list_lock, RT_WAITING_FOREVER);
     if (!thread_data->thread_wait_list)
         thread_data->thread_wait_list = &curr_thread_data->wait_node;
@@ -361,13 +360,10 @@ os_thread_join(korp_tid thread, void **value_ptr)
             p = p->next;
         p->next = &curr_thread_data->wait_node;
     }
-    rt_kprintf("os_thread_join 2\n");
     rt_mutex_release(thread_data->wait_list_lock);
 
-    rt_kprintf("rt_sem_take wait_node.sem\n");
     /* Wait the sem */
     rt_sem_take(curr_thread_data->wait_node.sem, RT_WAITING_FOREVER);
-    rt_kprintf("rt_sem_take wait_node.sem released\n");
     return BHT_OK;
 }
 
@@ -402,8 +398,6 @@ os_thread_cleanup(void)
 
     thread_data_list_remove(thread_data);
     rt_free(thread_data);
-
-    rt_kprintf("os_thread_cleanup is done\n");
 }
 
 void
