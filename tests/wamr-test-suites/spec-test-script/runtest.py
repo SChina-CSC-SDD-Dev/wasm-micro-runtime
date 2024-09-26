@@ -141,6 +141,13 @@ class Runner():
                            env=env)
             self.stdin = self.process.stdin
             self.stdout = self.process.stdout
+        elif os.environ.get('WAMR_TEST_UART_PORT'):
+            uart_fd = os.open(env['WAMR_TEST_UART_PORT'], os.O_RDWR)
+            self.stdin  = os.fdopen(uart_fd, 'r+b', 0)
+            self.stdout = self.stdin;
+            if self.stdin == None or self.stdout == None:
+                raise Exception("Open UART port fail")
+            self.writeline(' '.join(args))
         else:
             import fcntl
             # Pseudo-TTY and terminal manipulation
