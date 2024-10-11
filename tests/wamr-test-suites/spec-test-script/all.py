@@ -11,6 +11,7 @@ import pathlib
 import subprocess
 import sys
 import time
+import os
 
 """
 The script itself has to be put under the same directory with the "spec".
@@ -178,7 +179,7 @@ def test_case(
     CMD.append("--interpreter")
     if sgx_flag:
         CMD.append(IWASM_SGX_CMD)
-    elif qemu_flag:
+    elif qemu_flag or os.environ.get('WAMR_TEST_UART_PORT'):
         CMD.append(IWASM_QEMU_CMD)
     else:
         CMD.append(IWASM_CMD)

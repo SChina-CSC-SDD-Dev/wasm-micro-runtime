@@ -231,25 +231,31 @@ class Runner():
     def cleanup(self):
         atexit.unregister(self.cleanup)
 
-        if self.process:
+        if not self.no_pty:
             try:
-                self.writeline("__exit__")
+                if os.environ.get('WAMR_TEST_UART_PORT'):
+                    self.writeline("__exit__\n")
+                else:
+                    self.writeline("__exit__")
                 time.sleep(.020)
-                self.process.kill()
             except OSError:
                 pass
             except IOError:
                 pass
+
+        if self.process:
+            self.process.kill()
             self.process = None
-            self.stdin.close()
-            if self.stdin != self.stdout:
-                self.stdout.close()
-            self.stdin = None
-            self.stdout = None
             if not IS_PY_3:
                 sys.exc_clear()
             if self._stream_reader:
                 self._stream_reader.cleanup()
+
+        self.stdin.close()
+        if self.stdin != self.stdout:
+            self.stdout.close()
+        self.stdin = None
+        self.stdout = None
 
 def assert_prompt(runner, prompts, timeout, is_need_execute_result):
     # Wait for the initial prompt
@@ -1177,7 +1183,10 @@ def compile_wasm_to_aot(wasm_tempfile, aot_tempfile, runner, opts, r, output = '
     else:
         if (r != None):
             r.cleanup()
-        r = Runner(cmd, no_pty=opts.no_pty)
+        if os.environ.get('WAMR_TEST_UART_PORT'):
+            r = Runner(cmd, no_pty=True)
+        else:
+            r = Runner(cmd, no_pty=opts.no_pty)
         return r
 
 def run_wasm_with_repl(wasm_tempfile, aot_tempfile, opts, r):

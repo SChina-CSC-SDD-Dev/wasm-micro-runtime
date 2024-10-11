@@ -818,11 +818,6 @@ function build_iwasm_with_cfg()
 
 function build_wamrc()
 {
-    if [[ "${TARGET_LIST[*]}" =~ "${TARGET}" ]]; then
-        echo "suppose wamrc is already built"
-        return
-    fi
-
     BUILD_LLVM_SH=build_llvm.sh
     if [ ${TARGET} = "XTENSA" ]; then
         BUILD_LLVM_SH=build_llvm_xtensa.sh
@@ -1106,12 +1101,14 @@ function trigger()
                 echo "work in aot mode"
                 # aot
                 BUILD_FLAGS="$AOT_COMPILE_FLAGS $EXTRA_COMPILE_FLAGS"
-                if [[ ${ENABLE_QEMU} == 0 ]]; then
+                if [[ ${ENABLE_QEMU} == 0 ]] && [[ -z ${WAMR_TEST_UART_PORT} ]]; then
                     build_iwasm_with_cfg $BUILD_FLAGS
                 fi
                 if [ -z "${WAMRC_CMD}" ]; then
-                   build_wamrc
-                   WAMRC_CMD=${WAMRC_CMD_DEFAULT}
+		    if [ ! -f "${WAMRC_CMD_DEFAULT}" ]; then
+                       build_wamrc
+		    fi
+		    WAMRC_CMD=${WAMRC_CMD_DEFAULT}
                 fi
                 for suite in "${TEST_CASE_ARR[@]}"; do
                     $suite"_test" aot
