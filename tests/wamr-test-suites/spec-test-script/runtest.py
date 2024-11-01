@@ -1309,6 +1309,8 @@ def test_assert_with_exception(form, wast_tempfile, wasm_tempfile, aot_tempfile,
                 log("Out exception includes expected one, pass:")
                 log("  Expected: %s" %expected)
                 log("  Got: %s" % r.buf)
+                r.cleanup()
+                r = None
             else:
                 raise Exception("Failed:\n  expected: '%s'\n  got: '%s'" % \
                                 (expected, r.buf))
@@ -1358,6 +1360,7 @@ if __name__ == "__main__":
                 log("Skipping test: %s" % form[0:60])
             elif re.match("^\(assert_trap\s+\(module", form):
                 test_assert_with_exception(form, wast_tempfile, wasm_tempfile, aot_tempfile if test_aot else None, opts, r)
+                r = None
             elif re.match("^\(assert_exhaustion\\b.*", form):
                 test_assert_exhaustion(r, opts, form)
             elif re.match("^\(assert_exception\\b.*", form):
