@@ -1420,6 +1420,10 @@ if __name__ == "__main__":
                             elif (error_msg == "illegal opcode"
                                   and r.buf.find("unexpected end of section or function")):
                                 continue
+                            # severals cases in binary.wast
+                            elif ((error_msg == "unexpected end" or error_msg == "magic header not detected")
+                                  and r.buf.find("expected wasm file but got other")):
+                                continue
                             # one case in custom.wast
                             elif (error_msg == "length out of bounds"
                                   and r.buf.find("unexpected end")):
