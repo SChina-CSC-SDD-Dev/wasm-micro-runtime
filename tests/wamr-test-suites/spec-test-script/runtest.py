@@ -1019,6 +1019,10 @@ def test_assert_trap(r, opts, form):
         expected = "Exception: %s" % n.group(4)
         test_assert(r, opts, "trap", "%s %s" % (func, " ".join(args)), expected)
 
+    if not r:
+        r.cleanup()
+        r = None
+
 def test_assert_exhaustion(r,opts,form):
     # params
     m = re.search('^\(assert_exhaustion\s+\(invoke\s+"([^"]*)"\s+(\(.*\))\s*\)\s*"([^"]+)"\s*\)\s*$', form)
@@ -1456,6 +1460,7 @@ if __name__ == "__main__":
                     test_assert_return(r,opts,form)
                 elif form.startswith("(assert_trap"):
                     test_assert_trap(r,opts,form)
+                    r = None
             elif re.match("^\(module\\b.*", form):
                 # if the module includes the particular name startswith $
                 m = re.search("^\(module\s+\$.\S+", form)
