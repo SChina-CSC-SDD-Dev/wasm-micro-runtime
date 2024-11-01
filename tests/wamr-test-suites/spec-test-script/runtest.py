@@ -65,7 +65,7 @@ aot_target_options_map = {
 # AOT compilation options mapping for XIP mode
 aot_target_options_map_xip = {
     # avoid l32r relocations for xtensa
-    "xtensa": ["--mllvm=-mtext-section-literals"],
+    "xtensa": ["--size-level=0"],
     "riscv32_ilp32f": ["--enable-builtin-intrinsics=i64.common,f64.common,f32.const,f64.const,f64xi32,f64xi64,f64_promote_f32,f32_demote_f64"],
 }
 
@@ -268,7 +268,7 @@ def assert_prompt(runner, prompts, timeout, is_need_execute_result):
             log("Started with:\n%s" % header)
     else:
         log("Did not one of following prompt(s): %s" % repr(prompts))
-        log("    Got      : %s" % repr(r.buf))
+        log("    Got      : %s" % repr(runner.buf))
         sys.exit(1)
 
 
@@ -1279,13 +1279,15 @@ def test_assert_with_exception(form, wast_tempfile, wasm_tempfile, aot_tempfile,
     if test_aot:
         r = compile_wasm_to_aot(wasm_tempfile, aot_tempfile, True, opts, r)
         try:
-            assert_prompt(r, ['Compile success'], opts.start_fail_timeout, True)
+            assert_prompt(r, ['Compile success'], opts.start_fail_timeout, False)
         except:
             _, exc, _ = sys.exc_info()
             if (r.buf.find(expected) >= 0):
                 log("Out exception includes expected one, pass:")
                 log("  Expected: %s" % expected)
                 log("  Got: %s" % r.buf)
+                r.cleanup()
+                r = None
                 return
             else:
                 log("Run wamrc failed:\n  expected: '%s'\n  got: '%s'" % \
@@ -1510,6 +1512,7 @@ if __name__ == "__main__":
                 do_invoke(r, opts, form)
             elif re.match("^\(assert_invalid\\b.*", form):
                 test_assert_with_exception(form, wast_tempfile, wasm_tempfile, aot_tempfile if test_aot else None, opts, r)
+                r = None
             elif re.match("^\(register\\b.*", form):
                 # get module's new name from the register cmd
                 name_new =re.split('\"',re.search('\".*\"',form).group(0))[1]
