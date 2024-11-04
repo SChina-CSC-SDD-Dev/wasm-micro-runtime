@@ -959,6 +959,8 @@ def test_assert_return(r, opts, form):
         _, expected = parse_assertion_value(n.group(4)[1:-1])
         test_assert(r, opts, "return", "%s %s" % (func, " ".join(args)), expected)
 
+    return r
+
 def test_assert_trap(r, opts, form):
     # params
     m = re.search('^\(assert_trap\s+\(invoke\s+"([^"]*)"\s+(\(.*\))\s*\)\s*"([^"]+)"\s*\)\s*$', form)
@@ -1019,9 +1021,7 @@ def test_assert_trap(r, opts, form):
         expected = "Exception: %s" % n.group(4)
         test_assert(r, opts, "trap", "%s %s" % (func, " ".join(args)), expected)
 
-    if not r:
-        r.cleanup()
-        r = None
+    return r
 
 def test_assert_exhaustion(r,opts,form):
     # params
@@ -1290,9 +1290,7 @@ def test_assert_with_exception(form, wast_tempfile, wasm_tempfile, aot_tempfile,
                 log("Out exception includes expected one, pass:")
                 log("  Expected: %s" % expected)
                 log("  Got: %s" % r.buf)
-                r.cleanup()
-                r = None
-                return
+                return r
             else:
                 log("Run wamrc failed:\n  expected: '%s'\n  got: '%s'" % \
                     (expected, r.buf))
@@ -1313,11 +1311,12 @@ def test_assert_with_exception(form, wast_tempfile, wasm_tempfile, aot_tempfile,
                 log("Out exception includes expected one, pass:")
                 log("  Expected: %s" %expected)
                 log("  Got: %s" % r.buf)
-                r.cleanup()
-                r = None
+                return r
             else:
                 raise Exception("Failed:\n  expected: '%s'\n  got: '%s'" % \
                                 (expected, r.buf))
+
+    return r
 
 if __name__ == "__main__":
     opts = parser.parse_args(sys.argv[1:])
@@ -1363,8 +1362,7 @@ if __name__ == "__main__":
             elif skip_test(form, SKIP_TESTS):
                 log("Skipping test: %s" % form[0:60])
             elif re.match("^\(assert_trap\s+\(module", form):
-                test_assert_with_exception(form, wast_tempfile, wasm_tempfile, aot_tempfile if test_aot else None, opts, r)
-                r = None
+                r = test_assert_with_exception(form, wast_tempfile, wasm_tempfile, aot_tempfile if test_aot else None, opts, r)
             elif re.match("^\(assert_exhaustion\\b.*", form):
                 test_assert_exhaustion(r, opts, form)
             elif re.match("^\(assert_exception\\b.*", form):
@@ -1457,10 +1455,9 @@ if __name__ == "__main__":
             elif re.match(".*\(invoke\s+\$\\b.*", form):
                 # invoke a particular named module's function
                 if form.startswith("(assert_return"):
-                    test_assert_return(r,opts,form)
+                    r = test_assert_return(r,opts,form)
                 elif form.startswith("(assert_trap"):
-                    test_assert_trap(r,opts,form)
-                    r = None
+                    r = test_assert_trap(r,opts,form)
             elif re.match("^\(module\\b.*", form):
                 # if the module includes the particular name startswith $
                 m = re.search("^\(module\s+\$.\S+", form)
@@ -1516,15 +1513,14 @@ if __name__ == "__main__":
 
             elif re.match("^\(assert_return\\b.*", form):
                 assert(r), "iwasm repl runtime should be not null"
-                test_assert_return(r, opts, form)
+                r = test_assert_return(r, opts, form)
             elif re.match("^\(assert_trap\\b.*", form):
-                test_assert_trap(r, opts, form)
+                r = test_assert_trap(r, opts, form)
             elif re.match("^\(invoke\\b.*", form):
                 assert(r), "iwasm repl runtime should be not null"
                 do_invoke(r, opts, form)
             elif re.match("^\(assert_invalid\\b.*", form):
-                test_assert_with_exception(form, wast_tempfile, wasm_tempfile, aot_tempfile if test_aot else None, opts, r)
-                r = None
+                r = test_assert_with_exception(form, wast_tempfile, wasm_tempfile, aot_tempfile if test_aot else None, opts, r)
             elif re.match("^\(register\\b.*", form):
                 # get module's new name from the register cmd
                 name_new =re.split('\"',re.search('\".*\"',form).group(0))[1]
