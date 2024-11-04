@@ -1495,7 +1495,6 @@ if __name__ == "__main__":
                         raise Exception("compile wast to wasm failed")
 
                     if test_aot:
-                        r = None
                         r = compile_wasm_to_aot(wasm_tempfile, aot_tempfile, True, opts, r)
                         try:
                             assert_prompt(r, ['Compile success'], opts.start_timeout, False)
